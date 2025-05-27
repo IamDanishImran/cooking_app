@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+      "baseUrl": ".",
+      "paths": {
+        "@/*": ["./*"]
+      },
+      "target": "es5",
+      "lib": ["dom", "dom.iterable", "esnext"],
+      "allowJs": true,
+      "skipLibCheck": true,
+      "module": "esnext",
+      "moduleResolution": "node",
+      "resolveJsonModule": true,
+      "jsx": "preserve"
+    },
+    "include": [
+      "next-env.d.js",
+      "**/*.js",
+      "**/*.jsx",
+      ".next/types/**/*.js",
+      "app/**/*",
+      "utils/**/*",
+      "lib/**/*",
+      "components/**/*",
+      "middleware.ts",
+      "tailwind.config.js"
+    ],
+    "exclude": ["node_modules"]
+  }
+  
