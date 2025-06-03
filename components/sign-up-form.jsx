@@ -16,18 +16,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function SignUpForm({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+export function SignUpForm({ className, ...props }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
     const supabase = createClient();
     setIsLoading(true);
@@ -49,7 +46,7 @@ export function SignUpForm({
       });
       if (error) throw error;
       router.push("/auth/sign-up-success");
-    } catch (error: unknown) {
+    } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsLoading(false);
