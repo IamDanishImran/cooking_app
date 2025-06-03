@@ -1,44 +1,38 @@
+// components\hero.jsx
 import { NextLogo } from "./next-logo";
 import { SupabaseLogo } from "./supabase-logo";
+import { Button } from "./ui/button";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 export function Hero() {
   return (
-    <div className="flex flex-col gap-16 items-center">
-      <div className="flex gap-8 justify-center items-center">
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <SupabaseLogo />
-        </a>
-        <span className="border-l rotate-45 h-6" />
-        <a href="https://nextjs.org/" target="_blank" rel="noreferrer">
-          <NextLogo />
-        </a>
-      </div>
-      <h1 className="sr-only">Supabase and Next.js Starter Template</h1>
-      <p className="text-3xl lg:text-4xl !leading-tight mx-auto max-w-xl text-center">
-        The fastest way to build apps with{" "}
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Supabase
-        </a>{" "}
-        and{" "}
-        <a
-          href="https://nextjs.org/"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Next.js
-        </a>
-      </p>
-      <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
+    <div className="flex flex-col md:flex-row items-center w-full px-6 py-12 gap-8">
+      {/* Text section */}
+      <section className="flex-none w-full md:w-[450px] flex flex-col gap-6">
+        <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
+          Discover Dishes, Get Inspired
+        </h1>
+        A visual platform for food lovers — explore chef-inspired homemade recipes with mouthwatering photos. Like YouTube, but for sharing the story behind every dish — no videos, just pure cooking inspiration.
+        {/* <p className="text-lg md:text-base max-w-xl">
+          Upload your homemade recipes and dish photos to inspire others. No login required — just cook, snap, and share!
+        </p> */}
+        <div>
+          <Button asChild size="lg" className="bg-black text-white hover:bg-zinc-600 hover:text-white transitions-all duration-300" variant="outline">
+            <Link href="/protected">Get Started</Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* Image section */}
+      <section className="flex-1 flex justify-center items-center">
+        <img
+          src="/hero-chef.svg"
+          alt="Chef holding a delicious homemade dish"
+          className="w-full max-w-[600px] h-auto"
+        />
+      </section>
     </div>
   );
 }
+
