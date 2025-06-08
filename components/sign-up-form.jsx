@@ -1,80 +1,100 @@
+// components/sign-up-form.jsx
 "use client";
 
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
-export function SignUpForm({ className, ...props }) {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [repeatPassword, setRepeatPassword] = useState("");
-  const [role, setRole] = useState("");
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+const supabase = createClient();
 
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    const supabase = createClient();
-    setIsLoading(true);
-    setError(null);
-
-    if (password !== repeatPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // Extract both data and error from signUp
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
-        },
-      });
-
-      if (error) throw error;
-
-      const user = data?.user;
-
-      if (user) {
-        // Send username and role along with user ID to your custom API
-        const res = await fetch("/api/user", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: user.id, username, role }),
-        });
-
-        if (!res.ok) {
-          const { error } = await res.json();
-          throw new Error(error || "Failed to save user profile");
-        }
+  export function SignUpForm({ className, ...props }) {
+    const [formData, setFormData] = useState({
+      email: "",
+      password: "",
+      repeatPassword: "",
+      username: "",
+      role: ""
+    });
+    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
+  
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+      if (error) setError(null);
+    };
+  
+    const validateForm = () => {
+      const { username, email, password, repeatPassword, role } = formData;
+      if (!username || !email || !password || !repeatPassword || !role) {
+        return "All fields are required";
       }
-
-      router.push("/auth/sign-up-success");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "An error occurred");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      if (password !== repeatPassword) {
+        return "Passwords do not match";
+      }
+      return null;
+    };
+    
+    const handleSignUp = async (e) => {
+      e.preventDefault();
+      setIsLoading(true);
+      setError(null);
+    
+      try {
+        const validationError = validateForm();
+        if (validationError) throw new Error(validationError);
+    
+        const { email, password, username, role } = formData;
+    
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/protected`,
+            data: { username },
+          },
+        });
+    
+        if (signUpError) {
+          console.error("Supabase signUpError:", signUpError, signUpError.details);
+          throw signUpError;
+        }
+    
+        if (!authData || !authData.user) {
+          throw new Error("User signup data is missing.");
+        }
+    
+        const { error: insertError } = await supabase
+          .from("profile")
+          .insert({ 
+            user_id: authData.user.id, 
+            username, 
+            role 
+          })
+    
+        if (insertError) {
+          console.error("Supabase insert error:", insertError);
+          throw insertError;
+        }
+    
+        router.push("/auth/sign-up-success");
+      } catch (err) {
+        console.error("Signup error:", err);
+        setError(err.message || "Signup failed");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -84,77 +104,107 @@ export function SignUpForm({ className, ...props }) {
           <CardDescription>Create a new account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignUp}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="your username"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
-                <select
-                  name="role"
-                  id="role"
-                  className="border p-2 rounded-md shadow-sm text-sm"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  required
-                >
-                  <option value="">Select Your Role</option>
-                  <option value="CHEF">Chef</option>
-                  <option value="STUDENT">Viewer</option>
-                </select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
-                </div>
-                <Input
-                  id="repeat-password"
-                  type="password"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating an account..." : "Sign up"}
-              </Button>
+          <form onSubmit={handleSignUp} noValidate className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                placeholder="Your username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+              />
             </div>
-            <div className="mt-4 text-center text-sm">
+
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                At least 8 characters with 1 uppercase letter and 1 number
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="repeatPassword">Repeat Password</Label>
+              <Input
+                id="repeatPassword"
+                name="repeatPassword"
+                type="password"
+                value={formData.repeatPassword}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Role</Label>
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="CHEF"
+                    checked={formData.role === "CHEF"}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    className="h-4 w-4"
+                  />
+                  <span>Chef</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="STUDENT"
+                    checked={formData.role === "STUDENT"}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    className="h-4 w-4"
+                  />
+                  <span>Student</span>
+                </label>
+              </div>
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            )}
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Creating account..." : "Sign up"}
+            </Button>
+
+            <div className="text-center text-sm">
               Already have an account?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <Link href="/auth/login" className="underline">
                 Login
               </Link>
             </div>
@@ -164,166 +214,3 @@ export function SignUpForm({ className, ...props }) {
     </div>
   );
 }
-
-
-// "use client";
-
-// import { cn } from "@/lib/utils";
-// import { createClient } from "@/lib/supabase/client";
-// import { Button } from "@/components/ui/button";
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardHeader,
-//   CardTitle,
-// } from "@/components/ui/card";
-// import { Input } from "@/components/ui/input";
-// import { Label } from "@/components/ui/label";
-// import Link from "next/link";
-// import { useRouter } from "next/navigation";
-// import { useState } from "react";
-
-// export function SignUpForm({ className, ...props }) {
-//   const [username, setUsername] = useState("");
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [repeatPassword, setRepeatPassword] = useState("");
-//   const [role, setRole] = useState("");
-//   const [error, setError] = useState(null);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const router = useRouter();
-
-//   const handleSignUp = async (e) => {
-//     e.preventDefault();
-//     const supabase = createClient();
-//     setIsLoading(true);
-//     setError(null);
-
-//     if (password !== repeatPassword) {
-//       setError("Passwords do not match");
-//       setIsLoading(false);
-//       return;
-//     }
-
-//     try {
-//       const { error } = await supabase.auth.signUp({
-//         email,
-//         password,
-//         options: {
-//           emailRedirectTo: `${window.location.origin}/protected`,
-//         },
-//       });
-//       if (error) throw error;
-//       // Wait until user is confirmed in Supabase before inserting user profile
-//     const user = data?.user;
-
-//     if (user) {
-//       // Call your custom API to insert username and role
-//       const res = await fetch("/api/user", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({ username, role }),
-//       });
-
-//       if (!res.ok) {
-//         const { error } = await res.json();
-//         throw new Error(error || "Failed to save user profile");
-//       }
-//     }
-//       router.push("/auth/sign-up-success");
-//     } catch (error) {
-//       setError(error instanceof Error ? error.message : "An error occurred");
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   return (
-//     <div className={cn("flex flex-col gap-6", className)} {...props}>
-//       <Card>
-//         <CardHeader>
-//           <CardTitle className="text-2xl">Sign up</CardTitle>
-//           <CardDescription>Create a new account</CardDescription>
-//         </CardHeader>
-//         <CardContent>
-//           <form onSubmit={handleSignUp}>
-//             <div className="flex flex-col gap-6">
-//               <div className="grid gap-2">
-//                 <Label htmlFor="username">Username</Label>
-//                 <Input
-//                   id="username"
-//                   type="text"
-//                   placeholder="your username"
-//                   required
-//                   value={username}
-//                   onChange={(e) => setUsername(e.target.value)}
-//                 />
-//               </div>
-//               <div className="grid gap-2">
-//                 <Label htmlFor="role">Role</Label>
-//                 <select name="role" id="role"
-//                   className="border p-2 rounded-md shadow-sm text-sm"
-//                   value={role}
-//                   onChange={(e) => setRole(e.target.value)}
-//                   required
-//                 >
-//                   <option value="">Select Your Role</option>
-//                   <option value="chef">Chef</option>
-//                   <option value="viewer">Viewer</option>
-//                 </select>
-//               </div>
-//               <div className="grid gap-2">
-//                 <Label htmlFor="email">Email</Label>
-//                 <Input
-//                   id="email"
-//                   type="email"
-//                   placeholder="m@example.com"
-//                   required
-//                   value={email}
-//                   onChange={(e) => setEmail(e.target.value)}
-//                 />
-//               </div>
-//               <div className="grid gap-2">
-//                 <div className="flex items-center">
-//                   <Label htmlFor="password">Password</Label>
-//                 </div>
-//                 <Input
-//                   id="password"
-//                   type="password"
-//                   required
-//                   value={password}
-//                   onChange={(e) => setPassword(e.target.value)}
-//                 />
-//               </div>
-//               <div className="grid gap-2">
-//                 <div className="flex items-center">
-//                   <Label htmlFor="repeat-password">Repeat Password</Label>
-//                 </div>
-//                 <Input
-//                   id="repeat-password"
-//                   type="password"
-//                   required
-//                   value={repeatPassword}
-//                   onChange={(e) => setRepeatPassword(e.target.value)}
-//                 />
-//               </div>
-//               {error && <p className="text-sm text-red-500">{error}</p>}
-//               <Button type="submit" className="w-full" disabled={isLoading}>
-//                 {isLoading ? "Creating an account..." : "Sign up"}
-//               </Button>
-//             </div>
-//             <div className="mt-4 text-center text-sm">
-//               Already have an account?{" "}
-//               <Link href="/auth/login" className="underline underline-offset-4">
-//                 Login
-//               </Link>
-//             </div>
-//           </form>
-//         </CardContent>
-//       </Card>
-//     </div>
-//   );
-// }

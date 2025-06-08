@@ -35,7 +35,6 @@ export function LoginForm({ className, ...props }) {
         password,
       });
       if (error) throw error;
-      // Redirect to protected page on successful login
       router.push("/protected");
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -65,6 +64,7 @@ export function LoginForm({ className, ...props }) {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
               <div className="grid gap-2">
@@ -80,9 +80,11 @@ export function LoginForm({ className, ...props }) {
                 <Input
                   id="password"
                   type="password"
+                  placeholder="Your password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
@@ -92,10 +94,7 @@ export function LoginForm({ className, ...props }) {
             </div>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}
-              <Link
-                href="/auth/sign-up"
-                className="underline underline-offset-4"
-              >
+              <Link href="/auth/sign-up" className="underline underline-offset-4">
                 Sign up
               </Link>
             </div>
