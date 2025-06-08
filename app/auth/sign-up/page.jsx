@@ -1,3 +1,4 @@
+// app\auth\sign-up\page.jsx
 import { SignUpForm } from "@/components/sign-up-form";
 
 export default function Page() {
