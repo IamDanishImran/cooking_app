@@ -9,7 +9,7 @@ export default function ProtectedLayout({ children }) {
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-green-400">
+        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
           <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
             <div className="flex gap-5 items-center font-semibold">
               <Link href={"/"}>Cooking Youtube</Link>
@@ -18,7 +18,7 @@ export default function ProtectedLayout({ children }) {
 
           </div>
         </nav>
-        <div className="flex flex-col gap-20 w-screen p-5 bg-orange-400">
+        <div className="flex flex-col gap-20 w-screen p-5">
           {children}
         </div>
       </div>
