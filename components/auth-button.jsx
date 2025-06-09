@@ -1,3 +1,4 @@
+// components\auth-button.jsx
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -23,21 +24,21 @@ export async function AuthButton() {
   }
 
   const { data: profile, error } = await supabase
-    .from("profile")
+    .from("USER")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("auth_user_id", user.id)
     .single();
 
   if (error) {
-    console.error("Error fetching profile:", error.message);
+    console.error("Error fetching user:", error.message);
     // fallback to just email
-    // return (
-    //   <div className="flex items-center gap-4">
-    //     Hey, {user.email}!
-    //     <LogoutButton />
-    //     <ThemeSwitcher className="border border-black" />
-    //   </div>
-    // );
+    return (
+      <div className="flex items-center gap-4">
+        Hey, {user.email}!
+        <LogoutButton />
+        <ThemeSwitcher className="border border-black" />
+      </div>
+    );
   }
 
   return (

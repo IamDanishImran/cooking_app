@@ -75,11 +75,12 @@ const supabase = createClient();
         }
     
         const { error: insertError } = await supabase
-          .from("profile") // Replace with your actual table
+          .from("USER")
           .insert({ 
-            user_id: authData.user.id, 
+            auth_user_id: authData.user.id, 
             username, 
-            role 
+            role,
+            password
           })
     
         if (insertError) {

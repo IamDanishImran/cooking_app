@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 export default function SearchBar() {
   const [cuisineType, setCuisineType] = useState("");
@@ -29,25 +30,27 @@ export default function SearchBar() {
   }, [router]);
 
   const handleSearch = async () => {
-    const supabase = createClient();
-    let query = supabase.from("test_recipe").select("*"); // Replace with your actual table
-
-    if (cuisineType) query = query.eq("cuisine_type", cuisineType);
-    if (mealType) query = query.eq("meal_type", mealType);
-    if (dietaryPreferences) query = query.eq("dietary_preferences", dietaryPreferences);
-    if (cookingDifficulty) query = query.eq("cooking_difficulty", cookingDifficulty);
-    if (cookingTime) query = query.eq("cooking_time", cookingTime);
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Error fetching recipes:", error.message);
-      return;
+    const response = await fetch("/api/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cuisineType,
+        mealType,
+        dietaryPreferences,
+        cookingDifficulty,
+        cookingTime,
+      }),
+    });
+    const result = await response.json();
+    if (response.ok) {
+      setResults(result.results);
+    } else {
+      console.error("Search failed:", result.error);
+      setResults([]);
     }
-
-    setResults(data);
     setHasSearched(true);
   };
+  
 
   const handleReset = () => {
     setCuisineType("");
@@ -164,6 +167,12 @@ export default function SearchBar() {
             <Button onClick={handleReset}>Reset</Button>
           </div>
         </section>
+      </section>
+
+      <section className="w-full p-4 text-black rounded border">
+      <Link href="/auth/sign-up" className="underline underline-offset-4">
+                Sign up
+              </Link>
       </section>
 
       {/* Search Results */}
