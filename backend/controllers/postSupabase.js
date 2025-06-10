@@ -1,6 +1,9 @@
-const supabase = require('../config/supabase'); // Update this path according to your actual file structure
+// --- START OF FILE postSupabase.js ---
 
-// --- Unchanged Functions (for context) ---
+// FIX: Changed back to CommonJS 'require' to match the 'exports' syntax.
+const supabase = require('../config/supabase.js');
+
+// --- Functions ---
 exports.uploadImage = async (req, res) => {
   try {
     const { title } = req.body;
@@ -30,10 +33,10 @@ exports.testDb = async (req, res) => {
     res.status(200).json({ success: true, data });
   } catch (err) {
     console.error('Database connection error:', err);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: "Database connection failed",
-      details: err.message 
+      details: err.message
     });
   }
 };
@@ -48,7 +51,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Query Supabase
     const { data, error } = await supabase
       .from('USER')
       .select('*')
@@ -64,10 +66,9 @@ exports.login = async (req, res) => {
       });
     }
 
-    // If we get here, login was successful
     res.status(200).json({
       success: true,
-      data: data[0] // Return the first matching user
+      data: data[0]
     });
 
   } catch (err) {
@@ -83,7 +84,6 @@ exports.register = async (req, res) => {
   try {
     const { username, password, role } = req.body;
 
-    // Validate input
     if (!username || !password) {
       return res.status(400).json({
         success: false,
@@ -91,7 +91,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Validate role if provided
     if (role && !['CHEF', 'STUDENT'].includes(role)) {
       return res.status(400).json({
         success: false,
@@ -99,7 +98,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Validate username/password complexity
     if (username.length < 4) {
       return res.status(400).json({
         success: false,
@@ -107,7 +105,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Validate username/password complexity
     if (password.length < 8) {
       return res.status(400).json({
         success: false,
@@ -115,7 +112,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Check if username already exists
     const { data: existingUser, error: checkError } = await supabase
       .from('USER')
       .select('username')
@@ -135,20 +131,19 @@ exports.register = async (req, res) => {
     }
 
     console.log('Final insert payload:', {
-  username,
-  password,
-  role,
-  roleType: typeof role,  // Should be "string"
-  roleLength: role.length // Should be 4 for "CHEF"
-});
+      username,
+      password,
+      role,
+      roleType: typeof role,
+      roleLength: role.length
+    });
 
-    // Insert new user with user_id from sequence
     const { data: newUser, error: insertError } = await supabase
       .from('USER')
-      .insert([{ 
-        username, 
-        password, 
-        role: role || null 
+      .insert([{
+        username,
+        password,
+        role: role || null
       }])
       .select();
 
@@ -188,7 +183,6 @@ exports.createRecipeWithMedia = async (req, res) => {
     const doc_buffer = req.files['doc_data'][0].buffer;
     const image_buffer = req.files['image_data'][0].buffer;
 
-    // FIX: Convert buffers to hex strings for Supabase RPC `bytea` type.
     const doc_data_hex = '\\x' + doc_buffer.toString('hex');
     const image_data_hex = '\\x' + image_buffer.toString('hex');
 
@@ -200,7 +194,7 @@ exports.createRecipeWithMedia = async (req, res) => {
       p_doc_data: doc_data_hex,
       p_image_data: image_data_hex
     }).select();
-    
+
     if (error) throw error;
 
     res.status(201).json({
@@ -238,23 +232,19 @@ exports.getRecipesWithImages = async (req, res) => {
 
       if (item.image?.image_data) {
         try {
-          // Supabase client returns bytea as a hex string prefixed with '\\x'
           const hexString = item.image.image_data.substring(2);
           const buffer = Buffer.from(hexString, 'hex');
-          
+
           let finalBuffer = buffer;
-          // Attempt to parse the buffer as a JSON string to detect old, malformed data
           try {
             const parsed = JSON.parse(buffer.toString('utf-8'));
             if (parsed && parsed.type === 'Buffer' && Array.isArray(parsed.data)) {
-              // It's the old format. Reconstruct the buffer from the data array.
               finalBuffer = Buffer.from(parsed.data);
             }
-          } catch (jsonError) {
-            // This is expected for correctly stored data. The buffer is not JSON.
-            // We just use the 'finalBuffer' which is already correctly set.
+          } catch (_jsonError) {
+            // This is expected for correctly stored data.
           }
-          
+
           imageBase64 = finalBuffer.toString('base64');
         } catch (processingError) {
           console.error(`Failed to process image for recipe "${item.title}":`, processingError);
@@ -291,9 +281,6 @@ exports.getRecipeDetail = async (req, res) => {
       return res.status(400).json({ success: false, error: "Recipe ID is required." });
     }
 
-    // Query for the specific recipe and join its document and image
-    // Note: I'm assuming your recipe table's primary key is 'recipe_id'.
-    // Adjust 'recipe_id' if your primary key has a different name.
     const { data, error } = await supabase
       .from('recipe')
       .select(`
@@ -305,65 +292,63 @@ exports.getRecipeDetail = async (req, res) => {
         image:image_id ( image_data )
       `)
       .eq('recipe_id', id)
-      .single(); // .single() is perfect for fetching one row. It returns null if not found.
+      .single();
 
     if (error) {
-      // If the error is because no rows were found, send a 404.
       if (error.code === 'PGRST116') {
         return res.status(404).json({ success: false, error: "Recipe not found" });
       }
-      throw error; // For other errors, let the catch block handle it.
+      throw error;
     }
 
     if (!data) {
-        return res.status(404).json({ success: false, error: "Recipe not found" });
+      return res.status(404).json({ success: false, error: "Recipe not found" });
     }
 
-    // --- Process bytea data for both image and document ---
-    
     let imageBase64 = null;
     if (data.image?.image_data) {
-      // We'll reuse the robust processing logic from your 'getRecipes' function
       try {
         const hexString = data.image.image_data.substring(2);
         const buffer = Buffer.from(hexString, 'hex');
-        
+
         let finalBuffer = buffer;
         try {
           const parsed = JSON.parse(buffer.toString('utf-8'));
           if (parsed?.type === 'Buffer' && Array.isArray(parsed.data)) {
             finalBuffer = Buffer.from(parsed.data);
           }
-        } catch (e) { /* Not old malformed data, which is good */ }
+        // FIX: The linter is off, but this is still good practice for unused variables
+        } catch (_e) { /* Not old malformed data, which is good */ }
 
         imageBase64 = finalBuffer.toString('base64');
-      } catch (e) {
-        console.error("Error processing image data for recipe " + id, e);
+      // FIX: The linter is off, but we should still catch a named error
+      } catch (processingError) {
+        console.error("Error processing image data for recipe " + id, processingError);
       }
     }
-    
+
     let docBase64 = null;
     if (data.document?.doc_data) {
       try {
-        // The logic is the same as for the image
         const hexString = data.document.doc_data.substring(2);
         const buffer = Buffer.from(hexString, 'hex');
 
         let finalBuffer = buffer;
         try {
-            const parsed = JSON.parse(buffer.toString('utf-8'));
-            if (parsed?.type === 'Buffer' && Array.isArray(parsed.data)) {
-              finalBuffer = Buffer.from(parsed.data);
-            }
-        } catch(e) { /* Not old malformed data, which is good */ }
+          const parsed = JSON.parse(buffer.toString('utf-8'));
+          if (parsed?.type === 'Buffer' && Array.isArray(parsed.data)) {
+            finalBuffer = Buffer.from(parsed.data);
+          }
+        // FIX: The linter is off, but this is still good practice for unused variables
+        } catch (_e) { /* Not old malformed data, which is good */ }
 
         docBase64 = finalBuffer.toString('base64');
-      } catch (e) {
-        console.error("Error processing document data for recipe " + id, e);
+      // FIX: The linter is off, but we should still catch a named error
+      } catch (processingError) {
+        console.error("Error processing document data for recipe " + id, processingError);
       }
     }
 
-    // Prepare the final response object
     const result = {
       title: data.title,
       description: data.description,
@@ -377,24 +362,23 @@ exports.getRecipeDetail = async (req, res) => {
 
   } catch (err) {
     console.error('Error fetching recipe detail:', err);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: "Failed to fetch recipe details",
-      details: err.message 
+      details: err.message
     });
   }
 };
 
 exports.addComment = async (req, res) => {
   try {
-    // --- CHANGE [2] --- Added a check for the request body to diagnose middleware issues.
     if (!req.body) {
       return res.status(400).json({
         success: false,
         error: "Request body is missing. Ensure 'Content-Type' header is set to 'application/json'."
       });
     }
-      
+
     const { recipe_id } = req.params;
     const { user_id, comment_content } = req.body;
 
@@ -406,15 +390,14 @@ exports.addComment = async (req, res) => {
     }
 
     if (typeof comment_content !== 'string' || comment_content.trim() === '') {
-        return res.status(400).json({
-            success: false,
-            error: "Comment content cannot be empty."
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Comment content cannot be empty."
+      });
     }
 
-    // --- CHANGE [3] --- Changed table name to lowercase for better compatibility.
     const { data: newComment, error: insertError } = await supabase
-      .from('comment') // Use lowercase 'comment'
+      .from('comment')
       .insert([
         {
           recipe_id: parseInt(recipe_id, 10),
@@ -425,14 +408,14 @@ exports.addComment = async (req, res) => {
       .select();
 
     if (insertError) {
-        if (insertError.code === '23503') { 
-            return res.status(404).json({
-                success: false,
-                error: "The specified user or recipe does not exist.",
-                details: insertError.message
-            });
-        }
-        throw insertError;
+      if (insertError.code === '23503') {
+        return res.status(404).json({
+          success: false,
+          error: "The specified user or recipe does not exist.",
+          details: insertError.message
+        });
+      }
+      throw insertError;
     }
 
     res.status(201).json({
@@ -442,11 +425,10 @@ exports.addComment = async (req, res) => {
     });
 
   } catch (err) {
-    // --- CHANGE [4] --- Enhanced error logging for easier debugging.
     console.error('--- ERROR IN addComment ---');
     console.error('Caught error object:', err);
     console.error('---------------------------');
-    
+
     res.status(500).json({
       success: false,
       error: "Failed to add comment.",
@@ -459,49 +441,44 @@ exports.addComment = async (req, res) => {
 };
 
 exports.getCommentsForRecipe = async (req, res) => {
-    try {
-        // 1. Extract recipe_id from the URL
-        const { recipe_id } = req.params;
+  try {
+    const { recipe_id } = req.params;
 
-        // 2. Validate input
-        if (!recipe_id) {
-            return res.status(400).json({ success: false, error: "Recipe ID is required." });
-        }
+    if (!recipe_id) {
+      return res.status(400).json({ success: false, error: "Recipe ID is required." });
+    }
 
-        const { data, error } = await supabase
-            .from('comment')
-            .select(`
+    const { data, error } = await supabase
+      .from('comment')
+      .select(`
                 comment_content,
                 comment_datetime,
                 USER (
                     username
                 )
             `)
-            .eq('recipe_id', recipe_id)
-            .order('comment_datetime', { ascending: true }); // Order comments chronologically
+      .eq('recipe_id', recipe_id)
+      .order('comment_datetime', { ascending: true });
 
-        if (error) throw error;
+    if (error) throw error;
 
-        // 4. Format the data for a cleaner response
-        const formattedData = data.map(comment => ({
-            comment_content: comment.comment_content,
-            comment_datetime: comment.comment_datetime,
-            // Safely access the username from the nested USER object
-            username: comment.USER ? comment.USER.username : 'Unknown User'
-        }));
+    const formattedData = data.map(comment => ({
+      comment_content: comment.comment_content,
+      comment_datetime: comment.comment_datetime,
+      username: comment.USER ? comment.USER.username : 'Unknown User'
+    }));
 
-        // 5. Send the successful response
-        res.status(200).json({
-            success: true,
-            data: formattedData
-        });
+    res.status(200).json({
+      success: true,
+      data: formattedData
+    });
 
-    } catch (err) {
-        console.error('Error fetching comments:', err);
-        res.status(500).json({
-            success: false,
-            error: "Failed to fetch comments.",
-            details: { message: err.message, code: err.code }
-        });
-    }
+  } catch (err) {
+    console.error('Error fetching comments:', err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch comments.",
+      details: { message: err.message, code: err.code }
+    });
+  }
 };
