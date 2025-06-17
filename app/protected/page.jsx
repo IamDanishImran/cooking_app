@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SearchBar from "@/components/search-bar";
 import BtnRecipe from "@/components/add-recipe";
+import Link from "next/link";
 
 export default function ProtectedPage() {
   const router = useRouter();

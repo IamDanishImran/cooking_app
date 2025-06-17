@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import imageCompression from 'browser-image-compression';
+import { Alert } from "@heroui/alert";
 
 export default function AddRecipeModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -255,9 +256,6 @@ export default function AddRecipeModal() {
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Add Recipe</h3>
               <button onClick={handleModalClose} className="text-gray-400 hover:text-red-500 text-xl">&times;</button>
             </div>
-            {message && (
-              <div className={`p-3 mb-4 rounded-md text-sm ${isError ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>{message}</div>
-            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="title">Title</Label>
