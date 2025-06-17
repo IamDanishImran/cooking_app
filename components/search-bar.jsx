@@ -51,7 +51,6 @@ export default function SearchBar() {
     setHasSearched(true);
   };
   
-
   const handleReset = () => {
     setCuisineType("");
     setMealType("");
@@ -63,13 +62,13 @@ export default function SearchBar() {
   };
 
   return (
-    <section>
-      <section className="flex flex-col w-full rounded border text-black bg-[#f1f1f1]">
+    <>
+      <section className="flex flex-col w-full rounded border text-black bg-[#ffffff]">
         <div className="flex items-center justify-between p-4">
           <h1 className="font-bold text-xl">Search Panel</h1>
         </div>
 
-        <article className="flex gap-4 w-full p-4">
+        <article className="flex gap-4 w-full px-4">
           {/* Cuisine Type */}
           <div className="flex flex-col gap-2 w-full md:w-1/2">
             <label htmlFor="cuisineType" className="text-sm font-medium">Cuisine Type</label>
@@ -150,9 +149,9 @@ export default function SearchBar() {
           </div>
         </article>
 
-        {/* Filter Badges + Buttons */}
-        <section className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 gap-4 text-white rounded">
-          <article className="flex flex-wrap gap-2">
+        {/* Filter Badges & Buttons */}
+        <article className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 gap-4 text-white rounded">
+          <div className="flex flex-wrap gap-2">
             {hasSearched &&
               [cuisineType, mealType, dietaryPreferences, cookingDifficulty, cookingTime]
                 .filter(Boolean)
@@ -161,36 +160,30 @@ export default function SearchBar() {
                     {value}
                   </Badge>
                 ))}
-          </article>
+          </div>
           <div className="flex gap-2 ml-auto">
             <Button onClick={handleSearch}>Search Recipes</Button>
             <Button onClick={handleReset}>Reset</Button>
           </div>
-        </section>
+        </article>
       </section>
 
-      <section className="w-full p-4 text-black rounded border">
-      <Link href="/auth/sign-up" className="underline underline-offset-4">
-                Sign up
-              </Link>
-      </section>
-
-      {/* Search Results */}
-      <section className="w-full p-4 text-black rounded border bg-[#f1f1f1] mt-4">
-        <h2 className="text-lg font-semibold mb-2">Search Results</h2>
-        {results.length > 0 ? (
-          <ul className="space-y-2">
-            {results.map((item) => (
-              <li key={item.id} className="p-4 border rounded">
-                <h3 className="font-bold">{item.title}</h3>
-                <p>{item.description}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          hasSearched && <p>No matching recipes found.</p>
-        )}
-      </section>
-    </section>
+        {/* Search Results */}
+        {/* <section className="w-full p-4 text-black rounded border bg-[#f1f1f1]">
+          <h2 className="text-lg font-semibold mb-2">Search Results</h2>
+          {results.length > 0 ? (
+            <ul className="space-y-2">
+              {results.map((item) => (
+                <li key={item.id} className="p-4 border rounded">
+                  <h3 className="font-bold">{item.title}</h3>
+                  <p>{item.description}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            hasSearched && <p>No matching recipes found.</p>
+          )}
+      </section> */}
+      </>
   );
 }

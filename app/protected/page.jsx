@@ -5,102 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SearchBar from "@/components/search-bar";
-
-// --- MODAL COMPONENT ---
-// A self-contained component for displaying recipe details in a popup.
-const RecipeDetailModal = ({ recipe, onClose, isLoading }) => {
-  if (!recipe) return null;
-
-  // Function to view/download the document, adapted from your index.tsx
-  const viewDocument = (docBase64, title) => {
-    if (!docBase64) return;
-
-    let mimeType;
-    try {
-      // Check the "magic number" to see if it's a PDF
-      const decodedStart = atob(docBase64.substring(0, 8));
-      if (decodedStart.startsWith('%PDF')) {
-        mimeType = 'application/pdf';
-      } else {
-        // Otherwise, assume it's plain text
-        mimeType = 'text/plain';
-      }
-    } catch (e) {
-      console.error("Could not determine file type, defaulting to generic stream.", e);
-      mimeType = 'application/octet-stream';
-    }
-    
-    // Convert base64 to a Blob and create a URL to open
-    const byteCharacters = atob(docBase64);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const file = new Blob([byteArray], { type: mimeType });
-    const fileURL = URL.createObjectURL(file);
-    window.open(fileURL, '_blank');
-  };
-
-  return (
-    // Modal Overlay
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4"
-      onClick={onClose} // Close modal if overlay is clicked
-    >
-      {/* Modal Content */}
-      <div 
-        className="bg-white rounded-lg shadow-2xl p-6 md:p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside content
-      >
-        <button 
-          onClick={onClose} 
-          className="absolute top-4 right-4 text-gray-600 hover:text-gray-900 text-3xl font-bold"
-        >
-          ×
-        </button>
-        
-        {isLoading ? (
-          <p className="text-center py-10">Loading details...</p>
-        ) : recipe.error ? (
-          <p className="text-center py-10 text-red-600">Error: {recipe.error}</p>
-        ) : (
-          <>
-            <h2 className="text-3xl font-bold mb-2">{recipe.title}</h2>
-            <p className="text-lg text-gray-500 italic mb-4">{recipe.cuisine}</p>
-
-            {recipe.image_data && (
-              <img
-                src={`data:image/jpeg;base64,${recipe.image_data}`}
-                alt={recipe.title}
-                className="w-full max-h-96 object-contain rounded-md my-4"
-              />
-            )}
-            
-            <h3 className="text-xl font-semibold mt-6 border-b pb-2 mb-2">Description</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{recipe.description || "No description provided."}</p>
-            
-            <p className="text-sm text-gray-500 mt-6">
-              Published on: {new Date(recipe.date_time).toLocaleString()}
-            </p>
-
-            {recipe.doc_data && (
-              <div className="mt-8">
-                <button
-                  onClick={() => viewDocument(recipe.doc_data, recipe.title)}
-                  className="w-full md:w-auto bg-green-600 text-white font-semibold py-2 px-6 rounded hover:bg-green-700 transition-colors duration-300"
-                >
-                  View Document
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-
+import BtnRecipe from "@/components/add-recipe";
 
 export default function ProtectedPage() {
   const router = useRouter();
@@ -219,13 +124,11 @@ export default function ProtectedPage() {
               </p>
               
               <div className="mt-auto pt-4"> 
-                {/* CHANGED: This is now a button that opens the modal */}
-                <button 
-                  onClick={() => handleViewDetails(recipe.recipe_id)}
-                  className="block w-full text-center bg-sky-600 text-white font-semibold py-2 px-4 rounded hover:bg-sky-700 transition-colors duration-300 cursor-pointer"
-                >
-                  View Details
-                </button>
+                <Link href={`/protected/recipes/${recipe.recipe_id}`} passHref>
+                  <span className="block w-full text-white text-center bg-sky-600 font-semibold py-2 px-4 rounded hover:bg-sky-700 transition-colors duration-300 cursor-pointer">
+                    View Details
+                  </span>
+                </Link>
               </div>
             </div>
           </div>
@@ -235,27 +138,24 @@ export default function ProtectedPage() {
   };
 
   return (
-    <>
-      <div className="flex-1 w-full flex flex-col gap-4">
-        <section className="flex w-full h-32 rounded bg-sky-600 items-center justify-center text-white">
-          <h1 className="text-4xl font-bold">Cooking Platform</h1>
-        </section>
-        <SearchBar />
-        
-        <main className="p-4">
-          <h2 className="text-2xl font-semibold mb-6">Discover Recipes</h2>
-          {renderContent()}
-        </main>
-      </div>
-
-      {/* RENDER THE MODAL when it's open */}
-      {isModalOpen && (
-        <RecipeDetailModal
-          recipe={selectedRecipe}
-          isLoading={isModalLoading}
-          onClose={handleCloseModal}
-        />
-      )}
-    </>
+    <div className="flex-1 w-full flex flex-col gap-4">
+      <section className="flex w-full h-32 bg-indigo-400 rounded items-center justify-center text-white">
+        <h1 className="text-4xl font-bold">Cooking Platform</h1>
+        {/* <img
+          src="/cooking-banner.png"
+          alt="Chef holding a delicious homemade dish"
+          className="w-full max-w-[1400px] h-auto"
+        /> */}
+      </section>
+      <SearchBar />
+      
+      <main className="p-4 bg-white border rounded">
+        <div className="flex items-center justify-between py-4">
+            <h2 className="text-2xl font-semibold">Discover Recipes</h2>
+            <BtnRecipe />
+        </div>
+        {renderContent()}
+      </main>
+    </div>
   );
 }

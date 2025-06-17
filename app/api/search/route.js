@@ -7,12 +7,12 @@ export async function POST(req) {
 
   let query = supabase.from("recipe").select("*");
 
-  // Apply filters only if they exist in the body
+  // Apply filters
   if (body.cuisineType) query = query.eq("cuisine", body.cuisineType);
   if (body.mealType) query = query.eq("meal_type", body.mealType);
-  if (body.dietaryPreferences) query = query.contains("dietary_preferences", [body.dietaryPreferences]); // for text[]
+  if (body.dietaryPreferences) query = query.contains("dietary_preferences", [body.dietaryPreferences]);
   if (body.cookingDifficulty) query = query.eq("difficulty", body.cookingDifficulty);
-  if (body.cookingTime) query = query.lte("preparation_time", body.cookingTime); // e.g., max time filter
+  if (body.cookingTime) query = query.lte("preparation_time", body.cookingTime);
 
   const { data, error } = await query;
 
