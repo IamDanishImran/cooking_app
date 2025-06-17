@@ -1,3 +1,4 @@
+// app\protected\layout.jsx
 import { DeployButton } from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
@@ -18,7 +19,7 @@ export default function ProtectedLayout({ children }) {
 
           </div>
         </nav>
-        <div className="flex flex-col gap-20 w-screen p-5">
+        <div className="flex flex-col gap-20 w-full p-5 px-6 bg-[#f6f6f6]">
           {children}
         </div>
       </div>
