@@ -482,3 +482,80 @@ exports.getCommentsForRecipe = async (req, res) => {
     });
   }
 };
+
+exports.searchRecipes = async (req, res) => {
+  try {
+    const { cuisine, meal_type, difficulty, preparation_time } = req.body;
+
+    // Start building the query
+    let query = supabase
+      .from('recipe')
+      .select(`
+        recipe_id,
+        title,
+        date_time,
+        image: image_id (
+          image_data
+        )
+      `);
+
+    // Dynamically add case-insensitive filters for provided criteria
+    if (cuisine) {
+      query = query.ilike('cuisine', cuisine);
+    }
+    if (meal_type) {
+      query = query.ilike('meal_type', meal_type);
+    }
+    if (difficulty) {
+      query = query.ilike('difficulty', difficulty);
+    }
+    if (preparation_time) {
+      query = query.ilike('preparation_time', preparation_time);
+    }
+
+    // Execute the final query
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Process results to match the format of getRecipesWithImages for frontend consistency
+    const results = data.map(item => {
+      let imageBase64 = null;
+      if (item.image?.image_data) {
+        try {
+          const hexString = item.image.image_data.substring(2);
+          const buffer = Buffer.from(hexString, 'hex');
+          let finalBuffer = buffer;
+          try {
+            const parsed = JSON.parse(buffer.toString('utf-8'));
+            if (parsed && parsed.type === 'Buffer' && Array.isArray(parsed.data)) {
+              finalBuffer = Buffer.from(parsed.data);
+            }
+          } catch (_e) { /* ignore */ }
+          imageBase64 = finalBuffer.toString('base64');
+        } catch (processingError) {
+          console.error(`Failed to process image for recipe "${item.title}":`, processingError);
+        }
+      }
+      return {
+        recipe_id: item.recipe_id,
+        title: item.title,
+        date_time: item.date_time,
+        image_data: imageBase64,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: results,
+    });
+
+  } catch (err) {
+    console.error('Search error:', err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to search for recipes",
+      details: err.message
+    });
+  }
+};

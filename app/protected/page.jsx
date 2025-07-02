@@ -125,29 +125,48 @@ export default function ProtectedPage() {
     };
     checkUser();
   }, [router]);
+  
+  // MODIFIED: Centralized function for fetching recipes
+  const fetchRecipes = async (filters = null) => {
+    setLoading(true);
+    setError(null);
+    try {
+      let response;
+      const hasFilters = filters && Object.keys(filters).length > 0;
 
-  // This useEffect fetches the recipe list from your API
-  useEffect(() => {
-    const fetchRecipes = async () => {
-      try {
-        const response = await fetch('http://localhost:3002/api/recipes-with-images');
-        if (!response.ok) {
-          throw new Error(`API call failed with status: ${response.status}`);
-        }
-        const result = await response.json();
-        if (result.success) {
-          setRecipes(result.data);
-        } else {
-          throw new Error(result.error || 'An unknown error occurred');
-        }
-      } catch (e) {
-        console.error("Failed to fetch recipes:", e);
-        setError(e.message);
-      } finally {
-        setLoading(false);
+      if (hasFilters) {
+        // If filters are provided, call the search API
+        response = await fetch('http://localhost:3002/api/search-recipes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(filters)
+        });
+      } else {
+        // Otherwise, fetch all recipes
+        response = await fetch('http://localhost:3002/api/recipes-with-images');
       }
-    };
 
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+      const result = await response.json();
+      if (result.success) {
+        setRecipes(result.data);
+      } else {
+        throw new Error(result.error || 'An unknown error occurred');
+      }
+    } catch (e) {
+      console.error("Failed to fetch recipes:", e);
+      setError(e.message);
+      setRecipes([]); // Clear recipes on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  // This useEffect fetches the initial recipe list when the component mounts
+  useEffect(() => {
     fetchRecipes();
   }, []);
 
@@ -194,7 +213,7 @@ export default function ProtectedPage() {
     }
     
     if (recipes.length === 0) {
-        return <p className="text-center text-gray-500">No recipes found.</p>
+        return <p className="text-center text-gray-500">No recipes found. Try adjusting your search filters.</p>
     }
 
     return (
@@ -240,7 +259,9 @@ export default function ProtectedPage() {
         <section className="flex w-full h-32 rounded bg-sky-600 items-center justify-center text-white">
           <h1 className="text-4xl font-bold">Cooking Platform</h1>
         </section>
-        <SearchBar />
+
+        {/* MODIFIED: Pass handler functions to SearchBar */}
+        <SearchBar onSearch={fetchRecipes} onReset={() => fetchRecipes()} />
         
         <main className="p-4">
           <h2 className="text-2xl font-semibold mb-6">Discover Recipes</h2>

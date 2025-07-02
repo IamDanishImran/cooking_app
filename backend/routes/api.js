@@ -13,6 +13,7 @@ router.post('/create-recipe', upload, (req, res, next) => {
   next();
 }, supbasePosts.createRecipeWithMedia);
 router.get('/recipes-with-images', supbasePosts.getRecipesWithImages);
+router.post('/search-recipes', supbasePosts.searchRecipes);
 router.get('/recipe/:id', supbasePosts.getRecipeDetail);
 router.post('/recipe/:recipe_id/comment', supbasePosts.addComment);
 router.get('/recipe/:recipe_id/displaycomments', supbasePosts.getCommentsForRecipe);
